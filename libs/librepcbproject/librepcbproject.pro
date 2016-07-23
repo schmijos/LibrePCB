@@ -34,10 +34,6 @@ SOURCES += \
     schematics/schematic.cpp \
     schematics/cmd/cmdschematicadd.cpp \
     schematics/cmd/cmdschematicremove.cpp \
-    schematics/cmd/cmdschematicnetpointadd.cpp \
-    schematics/cmd/cmdschematicnetpointremove.cpp \
-    schematics/cmd/cmdschematicnetlineadd.cpp \
-    schematics/cmd/cmdschematicnetlineremove.cpp \
     schematics/cmd/cmdsymbolinstanceadd.cpp \
     schematics/cmd/cmdsymbolinstanceremove.cpp \
     schematics/cmd/cmdschematicnetlabeladd.cpp \
@@ -105,7 +101,14 @@ SOURCES += \
     boards/cmd/cmdboardviaremove.cpp \
     boards/cmd/cmdboardviaedit.cpp \
     boards/cmd/cmdboarddesignrulesmodify.cpp \
-    boards/boardgerberexport.cpp
+    boards/boardgerberexport.cpp \
+    schematics/items/si_netsegment.cpp \
+    schematics/cmd/cmdschematicnetsegmentadd.cpp \
+    schematics/cmd/cmdschematicnetsegmentremove.cpp \
+    schematics/cmd/cmdschematicnetsegmentedit.cpp \
+    schematics/cmd/cmdschematicnetsegmentaddelements.cpp \
+    schematics/cmd/cmdschematicnetsegmentremoveelements.cpp \
+    schematics/schematicselectionquery.cpp
 
 HEADERS += \
     project.h \
@@ -121,10 +124,6 @@ HEADERS += \
     schematics/schematic.h \
     schematics/cmd/cmdschematicadd.h \
     schematics/cmd/cmdschematicremove.h \
-    schematics/cmd/cmdschematicnetpointadd.h \
-    schematics/cmd/cmdschematicnetpointremove.h \
-    schematics/cmd/cmdschematicnetlineadd.h \
-    schematics/cmd/cmdschematicnetlineremove.h \
     schematics/cmd/cmdsymbolinstanceadd.h \
     schematics/cmd/cmdsymbolinstanceremove.h \
     schematics/cmd/cmdschematicnetlabeladd.h \
@@ -193,6 +192,13 @@ HEADERS += \
     boards/cmd/cmdboardviaremove.h \
     boards/cmd/cmdboardviaedit.h \
     boards/cmd/cmdboarddesignrulesmodify.h \
-    boards/boardgerberexport.h
+    boards/boardgerberexport.h \
+    schematics/items/si_netsegment.h \
+    schematics/cmd/cmdschematicnetsegmentadd.h \
+    schematics/cmd/cmdschematicnetsegmentremove.h \
+    schematics/cmd/cmdschematicnetsegmentedit.h \
+    schematics/cmd/cmdschematicnetsegmentaddelements.h \
+    schematics/cmd/cmdschematicnetsegmentremoveelements.h \
+    schematics/schematicselectionquery.h
 
 FORMS +=

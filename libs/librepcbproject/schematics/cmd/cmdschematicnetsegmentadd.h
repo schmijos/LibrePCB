@@ -17,67 +17,65 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTADD_H
+#define LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTADD_H
+
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include "cmdschematicnetlineadd.h"
-#include "../schematic.h"
-#include "../items/si_netline.h"
+#include <librepcbcommon/undocommand.h>
 
 /*****************************************************************************************
- *  Namespace
+ *  Namespace / Forward Declarations
  ****************************************************************************************/
 namespace librepcb {
 namespace project {
 
-/*****************************************************************************************
- *  Constructors / Destructor
- ****************************************************************************************/
-
-CmdSchematicNetLineAdd::CmdSchematicNetLineAdd(SI_NetLine& netline) noexcept :
-    UndoCommand(tr("Add netline")),
-    mSchematic(netline.getSchematic()), mStartPoint(netline.getStartPoint()),
-    mEndPoint(netline.getEndPoint()), mNetLine(&netline)
-{
-}
-
-CmdSchematicNetLineAdd::CmdSchematicNetLineAdd(Schematic& schematic, SI_NetPoint& startPoint,
-                                               SI_NetPoint& endPoint) noexcept :
-    UndoCommand(tr("Add netline")),
-    mSchematic(schematic), mStartPoint(startPoint), mEndPoint(endPoint), mNetLine(nullptr)
-{
-}
-
-CmdSchematicNetLineAdd::~CmdSchematicNetLineAdd() noexcept
-{
-}
+class NetSignal;
+class Schematic;
+class SI_NetSegment;
 
 /*****************************************************************************************
- *  Inherited from UndoCommand
+ *  Class CmdSchematicNetSegmentAdd
  ****************************************************************************************/
 
-bool CmdSchematicNetLineAdd::performExecute() throw (Exception)
+/**
+ * @brief The CmdSchematicNetSegmentAdd class
+ */
+class CmdSchematicNetSegmentAdd final : public UndoCommand
 {
-    if (!mNetLine) {
-        // create new netline
-        mNetLine = new SI_NetLine(mSchematic, mStartPoint, mEndPoint, Length(158750)); // can throw
-    }
+    public:
 
-    performRedo(); // can throw
+        // Constructors / Destructor
+        explicit CmdSchematicNetSegmentAdd(SI_NetSegment& segment) noexcept;
+        CmdSchematicNetSegmentAdd(Schematic& schematic, NetSignal& netsignal) noexcept;
+        ~CmdSchematicNetSegmentAdd() noexcept;
 
-    return true;
-}
+        // Getters
+        SI_NetSegment* getNetSegment() const noexcept {return mNetSegment;}
 
-void CmdSchematicNetLineAdd::performUndo() throw (Exception)
-{
-    mSchematic.removeNetLine(*mNetLine); // can throw
-}
 
-void CmdSchematicNetLineAdd::performRedo() throw (Exception)
-{
-    mSchematic.addNetLine(*mNetLine); // can throw
-}
+    private:
+
+        // Private Methods
+
+        /// @copydoc UndoCommand::performExecute()
+        bool performExecute() throw (Exception) override;
+
+        /// @copydoc UndoCommand::performUndo()
+        void performUndo() throw (Exception) override;
+
+        /// @copydoc UndoCommand::performRedo()
+        void performRedo() throw (Exception) override;
+
+
+        // Private Member Variables
+
+        Schematic& mSchematic;
+        NetSignal& mNetSignal;
+        SI_NetSegment* mNetSegment;
+};
 
 /*****************************************************************************************
  *  End of File
@@ -85,3 +83,5 @@ void CmdSchematicNetLineAdd::performRedo() throw (Exception)
 
 } // namespace project
 } // namespace librepcb
+
+#endif // LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTADD_H

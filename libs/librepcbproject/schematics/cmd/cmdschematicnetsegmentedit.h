@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTEDIT_H
-#define LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTEDIT_H
+#ifndef LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTEDIT_H
+#define LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTEDIT_H
 
 /*****************************************************************************************
  *  Includes
@@ -33,29 +33,26 @@
 namespace librepcb {
 namespace project {
 
-class SI_NetPoint;
-class SI_SymbolPin;
+class SI_NetSegment;
 class NetSignal;
 
 /*****************************************************************************************
- *  Class CmdSchematicNetPointEdit
+ *  Class CmdSchematicNetSegmentEdit
  ****************************************************************************************/
 
 /**
- * @brief The CmdSchematicNetPointEdit class
+ * @brief The CmdSchematicNetSegmentEdit class
  */
-class CmdSchematicNetPointEdit final : public UndoCommand
+class CmdSchematicNetSegmentEdit final : public UndoCommand
 {
     public:
 
         // Constructors / Destructor
-        explicit CmdSchematicNetPointEdit(SI_NetPoint& point) noexcept;
-        ~CmdSchematicNetPointEdit() noexcept;
+        explicit CmdSchematicNetSegmentEdit(SI_NetSegment& netsegment) noexcept;
+        ~CmdSchematicNetSegmentEdit() noexcept;
 
         // Setters
-        void setPinToAttach(SI_SymbolPin* pin) noexcept;
-        void setPosition(const Point& pos, bool immediate) noexcept;
-        void setDeltaToStartPos(const Point& deltaPos, bool immediate) noexcept;
+        void setNetSignal(NetSignal& netsignal) noexcept;
 
 
     private:
@@ -75,13 +72,11 @@ class CmdSchematicNetPointEdit final : public UndoCommand
         // Private Member Variables
 
         // Attributes from the constructor
-        SI_NetPoint& mNetPoint;
+        SI_NetSegment& mNetSegment;
 
         // General Attributes
-        SI_SymbolPin* mOldSymbolPin;
-        SI_SymbolPin* mNewSymbolPin;
-        Point mOldPos;
-        Point mNewPos;
+        NetSignal* mOldNetSignal;
+        NetSignal* mNewNetSignal;
 };
 
 /*****************************************************************************************
@@ -91,4 +86,4 @@ class CmdSchematicNetPointEdit final : public UndoCommand
 } // namespace project
 } // namespace librepcb
 
-#endif // LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTEDIT_H
+#endif // LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTEDIT_H

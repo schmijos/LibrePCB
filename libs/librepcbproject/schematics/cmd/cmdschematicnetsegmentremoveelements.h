@@ -17,15 +17,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTADD_H
-#define LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTADD_H
+#ifndef LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTREMOVEELEMENTS_H
+#define LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTREMOVEELEMENTS_H
 
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
 #include <librepcbcommon/undocommand.h>
-#include <librepcbcommon/units/point.h>
 
 /*****************************************************************************************
  *  Namespace / Forward Declarations
@@ -33,32 +32,28 @@
 namespace librepcb {
 namespace project {
 
-class NetSignal;
-class Schematic;
-class SI_SymbolPin;
+class SI_NetSegment;
 class SI_NetPoint;
+class SI_NetLine;
 
 /*****************************************************************************************
- *  Class CmdSchematicNetPointAdd
+ *  Class CmdSchematicNetSegmentRemoveElements
  ****************************************************************************************/
 
 /**
- * @brief The CmdSchematicNetPointAdd class
+ * @brief The CmdSchematicNetSegmentRemoveElements class
  */
-class CmdSchematicNetPointAdd final : public UndoCommand
+class CmdSchematicNetSegmentRemoveElements final : public UndoCommand
 {
     public:
 
         // Constructors / Destructor
-        explicit CmdSchematicNetPointAdd(SI_NetPoint& netpoint) noexcept;
-        CmdSchematicNetPointAdd(Schematic& schematic, NetSignal& netsignal,
-                                const Point& position) noexcept;
-        CmdSchematicNetPointAdd(Schematic& schematic, NetSignal& netsignal,
-                                SI_SymbolPin& pin) noexcept;
-        ~CmdSchematicNetPointAdd() noexcept;
+        CmdSchematicNetSegmentRemoveElements(SI_NetSegment& segment) noexcept;
+        ~CmdSchematicNetSegmentRemoveElements() noexcept;
 
-        // Getters
-        SI_NetPoint* getNetPoint() const noexcept {return mNetPoint;}
+        // General Methods
+        void removeNetPoint(SI_NetPoint& netpoint) throw (Exception);
+        void removeNetLine(SI_NetLine& netline) throw (Exception);
 
 
     private:
@@ -77,12 +72,9 @@ class CmdSchematicNetPointAdd final : public UndoCommand
 
         // Private Member Variables
 
-        Schematic& mSchematic;
-        NetSignal* mNetSignal;
-        bool mAttachedToSymbol;
-        Point mPosition;
-        SI_SymbolPin* mSymbolPin;
-        SI_NetPoint* mNetPoint;
+        SI_NetSegment& mNetSegment;
+        QList<SI_NetPoint*> mNetPoints;
+        QList<SI_NetLine*> mNetLines;
 };
 
 /*****************************************************************************************
@@ -92,4 +84,4 @@ class CmdSchematicNetPointAdd final : public UndoCommand
 } // namespace project
 } // namespace librepcb
 
-#endif // LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTADD_H
+#endif // LIBREPCB_PROJECT_CMDSCHEMATICNETSEGMENTREMOVEELEMENTS_H

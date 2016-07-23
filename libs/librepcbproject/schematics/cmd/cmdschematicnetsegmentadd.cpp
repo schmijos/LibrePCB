@@ -17,72 +17,67 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTEDIT_H
-#define LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTEDIT_H
-
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include <librepcbcommon/undocommand.h>
-#include <librepcbcommon/units/point.h>
+#include "cmdschematicnetsegmentadd.h"
+#include "../schematic.h"
+#include "../items/si_netsegment.h"
 
 /*****************************************************************************************
- *  Namespace / Forward Declarations
+ *  Namespace
  ****************************************************************************************/
 namespace librepcb {
 namespace project {
 
-class SI_NetPoint;
-class SI_SymbolPin;
-class NetSignal;
-
 /*****************************************************************************************
- *  Class CmdSchematicNetPointEdit
+ *  Constructors / Destructor
  ****************************************************************************************/
 
-/**
- * @brief The CmdSchematicNetPointEdit class
- */
-class CmdSchematicNetPointEdit final : public UndoCommand
+CmdSchematicNetSegmentAdd::CmdSchematicNetSegmentAdd(SI_NetSegment& segment) noexcept :
+    UndoCommand(tr("Add net segment")),
+    mSchematic(segment.getSchematic()), mNetSignal(segment.getNetSignal()),
+    mNetSegment(&segment)
 {
-    public:
+}
 
-        // Constructors / Destructor
-        explicit CmdSchematicNetPointEdit(SI_NetPoint& point) noexcept;
-        ~CmdSchematicNetPointEdit() noexcept;
+CmdSchematicNetSegmentAdd::CmdSchematicNetSegmentAdd(Schematic& schematic,
+                                                     NetSignal& netsignal) noexcept :
+    UndoCommand(tr("Add net segment")),
+    mSchematic(schematic), mNetSignal(netsignal), mNetSegment(nullptr)
+{
+}
 
-        // Setters
-        void setPinToAttach(SI_SymbolPin* pin) noexcept;
-        void setPosition(const Point& pos, bool immediate) noexcept;
-        void setDeltaToStartPos(const Point& deltaPos, bool immediate) noexcept;
+CmdSchematicNetSegmentAdd::~CmdSchematicNetSegmentAdd() noexcept
+{
+}
 
+/*****************************************************************************************
+ *  Inherited from UndoCommand
+ ****************************************************************************************/
 
-    private:
+bool CmdSchematicNetSegmentAdd::performExecute() throw (Exception)
+{
+    if (!mNetSegment) {
+        // create new net segment
+        mNetSegment = new SI_NetSegment(mSchematic, mNetSignal); // can throw
+    }
 
-        // Private Methods
+    performRedo(); // can throw
 
-        /// @copydoc UndoCommand::performExecute()
-        bool performExecute() throw (Exception) override;
+    return true;
+}
 
-        /// @copydoc UndoCommand::performUndo()
-        void performUndo() throw (Exception) override;
+void CmdSchematicNetSegmentAdd::performUndo() throw (Exception)
+{
+    mSchematic.removeNetSegment(*mNetSegment); // can throw
+}
 
-        /// @copydoc UndoCommand::performRedo()
-        void performRedo() throw (Exception) override;
-
-
-        // Private Member Variables
-
-        // Attributes from the constructor
-        SI_NetPoint& mNetPoint;
-
-        // General Attributes
-        SI_SymbolPin* mOldSymbolPin;
-        SI_SymbolPin* mNewSymbolPin;
-        Point mOldPos;
-        Point mNewPos;
-};
+void CmdSchematicNetSegmentAdd::performRedo() throw (Exception)
+{
+    mSchematic.addNetSegment(*mNetSegment); // can throw
+}
 
 /*****************************************************************************************
  *  End of File
@@ -90,5 +85,3 @@ class CmdSchematicNetPointEdit final : public UndoCommand
 
 } // namespace project
 } // namespace librepcb
-
-#endif // LIBREPCB_PROJECT_CMDSCHEMATICNETPOINTEDIT_H

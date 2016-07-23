@@ -443,6 +443,11 @@ class Project final : public QObject, public IF_AttributeProvider,
                                bool passToParents, QString& value) const noexcept;
 
 
+        // Operator Overloadings
+        bool operator==(const Project& rhs) noexcept {return (this == &rhs);}
+        bool operator!=(const Project& rhs) noexcept {return (this != &rhs);}
+
+
         // Static Methods
 
         static Project* create(const FilePath& filepath) throw (Exception)
