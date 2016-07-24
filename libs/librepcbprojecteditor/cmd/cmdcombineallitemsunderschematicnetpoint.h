@@ -17,14 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_PROJECT_SES_ADDNETLABEL_H
-#define LIBREPCB_PROJECT_SES_ADDNETLABEL_H
+#ifndef LIBREPCB_PROJECT_CMDCOMBINEALLITEMSUNDERSCHEMATICNETPOINT_H
+#define LIBREPCB_PROJECT_CMDCOMBINEALLITEMSUNDERSCHEMATICNETPOINT_H
 
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include "ses_base.h"
+#include <librepcbcommon/undocommandgroup.h>
+#include <librepcbcommon/units/point.h>
 
 /*****************************************************************************************
  *  Namespace / Forward Declarations
@@ -32,47 +33,44 @@
 namespace librepcb {
 namespace project {
 
+class Circuit;
 class Schematic;
-class SI_NetLabel;
-class CmdSchematicNetLabelEdit;
+class SI_NetPoint;
 
 /*****************************************************************************************
- *  Class SES_AddNetLabel
+ *  Class CmdCombineAllItemsUnderSchematicNetPoint
  ****************************************************************************************/
 
 /**
- * @brief The SES_AddNetLabel class
+ * @brief The CmdCombineAllItemsUnderSchematicNetPoint class
  */
-class SES_AddNetLabel final : public SES_Base
+class CmdCombineAllItemsUnderSchematicNetPoint final : public UndoCommandGroup
 {
-        Q_OBJECT
-
     public:
 
         // Constructors / Destructor
-        explicit SES_AddNetLabel(SchematicEditor& editor, Ui::SchematicEditor& editorUi,
-                                 GraphicsView& editorGraphicsView, UndoStack& undoStack);
-        ~SES_AddNetLabel();
+        CmdCombineAllItemsUnderSchematicNetPoint(SI_NetPoint& netpoint) noexcept;
+        ~CmdCombineAllItemsUnderSchematicNetPoint() noexcept;
 
-        // General Methods
-        ProcRetVal process(SEE_Base* event) noexcept override;
-        bool entry(SEE_Base* event) noexcept override;
-        bool exit(SEE_Base* event) noexcept override;
+        // Getters
+        bool hasCombinedSomeItems() const noexcept {return mHasCombinedSomeItems;}
 
 
     private:
 
         // Private Methods
-        ProcRetVal processSceneEvent(SEE_Base* event) noexcept;
-        bool addLabel(Schematic& schematic, const Point& pos) noexcept;
-        bool updateLabel(const Point& pos) noexcept;
-        bool fixLabel(const Point& pos) noexcept;
+
+        /// @copydoc UndoCommand::performExecute()
+        bool performExecute() throw (Exception) override;
 
 
-        // General Attributes
-        bool mUndoCmdActive;
-        SI_NetLabel* mCurrentNetLabel;
-        CmdSchematicNetLabelEdit* mEditCmd;
+        // Attributes from the constructor
+        Circuit& mCircuit;
+        Schematic& mSchematic;
+        SI_NetPoint& mNetPoint;
+
+        // Private Member Variables
+        bool mHasCombinedSomeItems;
 };
 
 /*****************************************************************************************
@@ -82,4 +80,4 @@ class SES_AddNetLabel final : public SES_Base
 } // namespace project
 } // namespace librepcb
 
-#endif // LIBREPCB_PROJECT_SES_ADDNETLABEL_H
+#endif // LIBREPCB_PROJECT_CMDCOMBINEALLITEMSUNDERSCHEMATICNETPOINT_H

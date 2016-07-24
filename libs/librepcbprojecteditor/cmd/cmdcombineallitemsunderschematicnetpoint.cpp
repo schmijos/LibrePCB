@@ -21,7 +21,7 @@
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include "cmdcombineallnetsignalsunderschematicnetpoint.h"
+#include "cmdcombineallitemsunderschematicnetpoint.h"
 #include <librepcbcommon/scopeguard.h>
 #include <librepcbproject/project.h>
 #include <librepcbproject/circuit/circuit.h>
@@ -32,15 +32,19 @@
 #include <librepcbproject/schematics/items/si_netpoint.h>
 #include <librepcbproject/schematics/items/si_netline.h>
 #include <librepcbproject/schematics/items/si_symbolpin.h>
+#include <librepcbproject/schematics/items/si_netsegment.h>
 #include <librepcbproject/circuit/cmd/cmdnetsignaledit.h>
 #include <librepcbproject/circuit/cmd/cmdcompsiginstsetnetsignal.h>
-#include <librepcbproject/schematics/cmd/cmdschematicnetpointadd.h>
+#include <librepcbproject/schematics/cmd/cmdschematicnetsegmentremove.h>
+#include <librepcbproject/schematics/cmd/cmdschematicnetsegmentadd.h>
+#include <librepcbproject/schematics/cmd/cmdschematicnetsegmentremoveelements.h>
+#include <librepcbproject/schematics/cmd/cmdschematicnetsegmentaddelements.h>
 #include <librepcbproject/schematics/cmd/cmdschematicnetpointedit.h>
-#include <librepcbproject/schematics/cmd/cmdschematicnetlineadd.h>
-#include <librepcbproject/schematics/cmd/cmdschematicnetlineremove.h>
 #include "cmdcombinenetsignals.h"
 #include "cmdcombineschematicnetpoints.h"
 #include "cmdremoveunusednetsignals.h"
+#include "cmdchangenetsignalofschematicnetsegment.h"
+#include "cmdcombineschematicnetsegments.h"
 
 /*****************************************************************************************
  *  Namespace
@@ -52,7 +56,7 @@ namespace project {
  *  Constructors / Destructor
  ****************************************************************************************/
 
-CmdCombineAllNetSignalsUnderSchematicNetPoint::CmdCombineAllNetSignalsUnderSchematicNetPoint(
+CmdCombineAllItemsUnderSchematicNetPoint::CmdCombineAllItemsUnderSchematicNetPoint(
         SI_NetPoint& netpoint) noexcept :
     UndoCommandGroup(tr("Combine Schematic Items")),
     mCircuit(netpoint.getCircuit()), mSchematic(netpoint.getSchematic()), mNetPoint(netpoint),
@@ -60,7 +64,7 @@ CmdCombineAllNetSignalsUnderSchematicNetPoint::CmdCombineAllNetSignalsUnderSchem
 {
 }
 
-CmdCombineAllNetSignalsUnderSchematicNetPoint::~CmdCombineAllNetSignalsUnderSchematicNetPoint() noexcept
+CmdCombineAllItemsUnderSchematicNetPoint::~CmdCombineAllItemsUnderSchematicNetPoint() noexcept
 {
 }
 
@@ -68,7 +72,7 @@ CmdCombineAllNetSignalsUnderSchematicNetPoint::~CmdCombineAllNetSignalsUnderSche
  *  Inherited from UndoCommand
  ****************************************************************************************/
 
-bool CmdCombineAllNetSignalsUnderSchematicNetPoint::performExecute() throw (Exception)
+bool CmdCombineAllItemsUnderSchematicNetPoint::performExecute() throw (Exception)
 {
     // if an error occurs, undo all already executed child commands
     auto undoScopeGuard = scopeGuard([&](){performUndo();});
@@ -83,80 +87,102 @@ bool CmdCombineAllNetSignalsUnderSchematicNetPoint::performExecute() throw (Exce
     QList<SI_NetLine*> netlinesUnderCursor = mSchematic.getNetLinesAtScenePos(mNetPoint.getPosition());
     QList<SI_SymbolPin*> pinsUnderCursor = mSchematic.getPinsAtScenePos(mNetPoint.getPosition());
 
-    // get all other netsignals of the items under the netpoint
-    QList<NetSignal*> netSignalsUnderCursor;
-    QStringList forcedNetNames;
+    // get all other netsegments/netsignals of the items under the netpoint
+    QSet<SI_NetSegment*> netSegmentsUnderCursor;
+    QSet<NetSignal*> netSignalsUnderCursor;
+    QSet<QString> forcedNetNames;
     foreach (SI_NetPoint* netpoint, netpointsUnderCursor) {
-        if (!netSignalsUnderCursor.contains(&netpoint->getNetSignal())) {
-            netSignalsUnderCursor.append(&netpoint->getNetSignal());
-        }
+        netSegmentsUnderCursor.insert(&netpoint->getNetSegment());
+        netSignalsUnderCursor.insert(&netpoint->getNetSignalOfNetSegment());
     }
     foreach (SI_NetLine* netline, netlinesUnderCursor) {
-        if (!netSignalsUnderCursor.contains(&netline->getNetSignal())) {
-            netSignalsUnderCursor.append(&netline->getNetSignal());
-        }
+        netSegmentsUnderCursor.insert(&netline->getNetSegment());
+        netSignalsUnderCursor.insert(&netline->getNetSignalOfNetSegment());
     }
     foreach (SI_SymbolPin* pin, pinsUnderCursor) {
-        ComponentSignalInstance* cmpSig = pin->getComponentSignalInstance();
         NetSignal* signal = pin->getCompSigInstNetSignal();
-        if ((signal) && (!netSignalsUnderCursor.contains(signal))) {
-            netSignalsUnderCursor.append(signal);
+        if (signal) {
+            netSignalsUnderCursor.insert(signal);
         }
+        ComponentSignalInstance* cmpSig = pin->getComponentSignalInstance();
         if ((cmpSig) && (cmpSig->isNetSignalNameForced())) {
-            if (!forcedNetNames.contains(cmpSig->getForcedNetSignalName())) {
-                forcedNetNames.append(cmpSig->getForcedNetSignalName());
-            }
+            forcedNetNames.insert(cmpSig->getForcedNetSignalName());
         }
     }
     foreach (NetSignal* netsignal, netSignalsUnderCursor) {
-        if ((netsignal->isNameForced()) && (!forcedNetNames.contains(netsignal->getName()))) {
-            forcedNetNames.append(netsignal->getName());
+        if (netsignal->isNameForced()) {
+            forcedNetNames.insert(netsignal->getName());
         }
     }
 
     // check forced net names
     QString nameOfResultingNetSignal;
     if (forcedNetNames.count() == 0) {
-        nameOfResultingNetSignal = mNetPoint.getNetSignal().getName();
+        nameOfResultingNetSignal = mNetPoint.getNetSignalOfNetSegment().getName();
     } else if (forcedNetNames.count() == 1) {
-        nameOfResultingNetSignal = forcedNetNames.first();
+        nameOfResultingNetSignal = *forcedNetNames.constBegin();
     } else if (forcedNetNames.count() > 1) {
         // TODO: what should we do here?
         throw RuntimeError(__FILE__, __LINE__, QString(),
              tr("There are multiple different nets with forced names at this position."));
     }
+    Q_ASSERT(!nameOfResultingNetSignal.isEmpty());
 
     // determine resulting netsignal
     NetSignal* resultingNetSignal = mCircuit.getNetSignalByName(nameOfResultingNetSignal);
     if (!resultingNetSignal) {
         // rename current netsignal
-        CmdNetSignalEdit* cmd = new CmdNetSignalEdit(mCircuit, mNetPoint.getNetSignal());
+        CmdNetSignalEdit* cmd = new CmdNetSignalEdit(mCircuit, mNetPoint.getNetSignalOfNetSegment());
         cmd->setName(nameOfResultingNetSignal, false);
         execNewChildCmd(cmd); // can throw
-        resultingNetSignal = &mNetPoint.getNetSignal();
+        resultingNetSignal = &mNetPoint.getNetSignalOfNetSegment();
     }
     Q_ASSERT(resultingNetSignal);
 
+    // change netsignal of all netsegments
+    foreach (SI_NetSegment* netsegment, netSegmentsUnderCursor) { Q_ASSERT(netsegment);
+        execNewChildCmd(new CmdChangeNetSignalOfSchematicNetSegment(
+                            *netsegment, *resultingNetSignal)); // can throw
+    }
 
-    // combine all netsignals togehter
-    foreach (NetSignal* netsignal, netSignalsUnderCursor) {
-        if (netsignal != resultingNetSignal) {
-            execNewChildCmd(new CmdCombineNetSignals(mCircuit, *netsignal,
-                                                     *resultingNetSignal)); // can throw
+    // combine all netsegments together
+    SI_NetSegment& resultingNetSegment = mNetPoint.getNetSegment();
+    foreach (SI_NetSegment* netsegment, netSegmentsUnderCursor) { Q_ASSERT(netsegment);
+        if (netsegment != &resultingNetSegment) {
+            execNewChildCmd(new CmdCombineSchematicNetSegments(*netsegment, mNetPoint)); // can throw
             mHasCombinedSomeItems = true;
         }
     }
 
-    // combine all netpoints together
-    // TODO: does this work properly in any case?
-    foreach (SI_NetPoint* netpoint, netpointsUnderCursor) {
-        if (netpoint != &mNetPoint) {
+    // combine with netpoints & netlines of the same netsegment under the cursor
+    netpointsUnderCursor.clear();
+    resultingNetSegment.getNetPointsAtScenePos(mNetPoint.getPosition(), netpointsUnderCursor);
+    netpointsUnderCursor.removeOne(&mNetPoint);
+    if (netpointsUnderCursor.count() > 0) {
+        foreach (SI_NetPoint* netpoint, netpointsUnderCursor) {
             execNewChildCmd(new CmdCombineSchematicNetPoints(*netpoint, mNetPoint)); // can throw
             mHasCombinedSomeItems = true;
         }
+    } else {
+        netlinesUnderCursor.clear();
+        resultingNetSegment.getNetLinesAtScenePos(mNetPoint.getPosition(), netlinesUnderCursor);
+        QList<SI_NetLine*> netlinesOfNetpoint = mNetPoint.getLines();
+        foreach (SI_NetLine* netline, netlinesUnderCursor) {
+            if (!netlinesOfNetpoint.contains(netline)) {
+                // TODO: do not create redundant netlines!
+                auto* cmdAdd = new CmdSchematicNetSegmentAddElements(resultingNetSegment);
+                auto* cmdRemove = new CmdSchematicNetSegmentRemoveElements(resultingNetSegment);
+                cmdRemove->removeNetLine(*netline);
+                cmdAdd->addNetLine(mNetPoint, netline->getStartPoint());
+                cmdAdd->addNetLine(mNetPoint, netline->getEndPoint());
+                execNewChildCmd(cmdAdd); // can throw
+                execNewChildCmd(cmdRemove); // can throw
+                mHasCombinedSomeItems = true;
+            }
+        }
     }
 
-    // TODO: connect all pins under the cursor to the netpoint
+    // TODO: connect all pins under the cursor to the netsegment
     if (pinsUnderCursor.count() == 1) {
         SI_SymbolPin* pin = pinsUnderCursor.first();
         if (mNetPoint.getSymbolPin() != pin) {
@@ -168,16 +194,11 @@ bool CmdCombineAllNetSignalsUnderSchematicNetPoint::performExecute() throw (Exce
                     execNewChildCmd(new CmdCompSigInstSetNetSignal(*cmpSig, resultingNetSignal)); // can throw
                 }
                 // attach netpoint to pin
-                QList<SI_NetLine*> lines = mNetPoint.getLines();
-                foreach (SI_NetLine* line, lines) {
-                    execNewChildCmd(new CmdSchematicNetLineRemove(*line)); // can throw
-                }
+                execNewChildCmd(new CmdSchematicNetSegmentRemove(resultingNetSegment)); // can throw
                 CmdSchematicNetPointEdit* cmd = new CmdSchematicNetPointEdit(mNetPoint);
                 cmd->setPinToAttach(pin);
                 execNewChildCmd(cmd); // can throw
-                foreach (SI_NetLine* line, lines) {
-                    execNewChildCmd(new CmdSchematicNetLineAdd(*line)); // can throw
-                }
+                execNewChildCmd(new CmdSchematicNetSegmentAdd(resultingNetSegment)); // can throw
                 mHasCombinedSomeItems = true;
             } else {
                 throw RuntimeError(__FILE__, __LINE__, QString(),
@@ -187,45 +208,6 @@ bool CmdCombineAllNetSignalsUnderSchematicNetPoint::performExecute() throw (Exce
     } else if (pinsUnderCursor.count() > 1) {
         throw RuntimeError(__FILE__, __LINE__, QString(),
                            tr("Sorry, not yet implemented..."));
-    }
-    /*foreach (SI_SymbolPin* pin, pinsUnderCursor) {
-        ComponentSignalInstance* cmpSig = pin->getComponentSignalInstance();
-        if (cmpSig) {
-            if (cmpSig->getNetSignal() != resultingNetSignal) {
-                // change netsignal of component signal
-                // TODO: this does not work in all cases!
-                execNewChildCmd(new CmdCompSigInstSetNetSignal(*cmpSig, resultingNetSignal)); // can throw
-            }
-            if (pin->getNetPoint() != &mNetPoint) {
-                // connect netpoint to pin
-                if ((mNetPoint.getSymbolPin() == nullptr) || mNetPoint.getSymbolPin() == pin) {
-                    CmdSchematicNetPointEdit* cmd = new CmdSchematicNetPointEdit(mNetPoint);
-                    cmd->setPinToAttach(pin);
-                    execNewChildCmd(cmd); // can throw
-                } else {
-                    // TODO: attach pin to netpoint
-                    throw RuntimeError(__FILE__, __LINE__, QString(),
-                                       tr("Sorry, not yet implemented..."));
-                }
-            }
-        } else {
-            throw RuntimeError(__FILE__, __LINE__, QString(),
-                tr("There is at least one pin at this position cannot be connected to a net."));
-        }
-    }*/
-
-    // split all lines under the cursor and connect them to the netpoint
-    // TODO: avoid adding duplicate netlines!
-    netlinesUnderCursor = mSchematic.getNetLinesAtScenePos(mNetPoint.getPosition()); // important!
-    foreach (SI_NetLine* netline, netlinesUnderCursor) {
-        SI_NetPoint& p1 = netline->getStartPoint();
-        SI_NetPoint& p2 = netline->getEndPoint();
-        if ((p1 != mNetPoint) && (p2 != mNetPoint)) {
-            execNewChildCmd(new CmdSchematicNetLineRemove(*netline)); // can throw
-            execNewChildCmd(new CmdSchematicNetLineAdd(mSchematic, p1, mNetPoint)); // can throw
-            execNewChildCmd(new CmdSchematicNetLineAdd(mSchematic, mNetPoint, p2)); // can throw
-            mHasCombinedSomeItems = true;
-        }
     }
 
     if (getChildCount() > 0) {

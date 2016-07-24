@@ -59,7 +59,6 @@ SOURCES += \
     cmd/cmdremoveselectedboarditems.cpp \
     cmd/cmdreplacedevice.cpp \
     cmd/cmdplaceschematicnetpoint.cpp \
-    cmd/cmdcombineallnetsignalsunderschematicnetpoint.cpp \
     cmd/cmdremoveunusednetsignals.cpp \
     boardeditor/fsm/bes_drawtrace.cpp \
     boardeditor/fsm/bes_addvia.cpp \
@@ -71,7 +70,10 @@ SOURCES += \
     boardeditor/fabricationoutputdialog.cpp \
     cmd/cmdremovedevicefromboard.cpp \
     cmd/cmdremoveviafromboard.cpp \
-    cmd/cmddetachboardnetpointfromviaorpad.cpp
+    cmd/cmddetachboardnetpointfromviaorpad.cpp \
+    cmd/cmdchangenetsignalofschematicnetsegment.cpp \
+    cmd/cmdcombineallitemsunderschematicnetpoint.cpp \
+    cmd/cmdcombineschematicnetsegments.cpp
 
 HEADERS += \
     projecteditor.h \
@@ -112,7 +114,6 @@ HEADERS += \
     cmd/cmdremoveselectedboarditems.h \
     cmd/cmdreplacedevice.h \
     cmd/cmdplaceschematicnetpoint.h \
-    cmd/cmdcombineallnetsignalsunderschematicnetpoint.h \
     cmd/cmdremoveunusednetsignals.h \
     boardeditor/fsm/bes_drawtrace.h \
     boardeditor/fsm/bes_addvia.h \
@@ -124,7 +125,10 @@ HEADERS += \
     boardeditor/fabricationoutputdialog.h \
     cmd/cmdremovedevicefromboard.h \
     cmd/cmdremoveviafromboard.h \
-    cmd/cmddetachboardnetpointfromviaorpad.h
+    cmd/cmddetachboardnetpointfromviaorpad.h \
+    cmd/cmdchangenetsignalofschematicnetsegment.h \
+    cmd/cmdcombineallitemsunderschematicnetpoint.h \
+    cmd/cmdcombineschematicnetsegments.h
 
 FORMS += \
     schematiceditor/schematiceditor.ui \

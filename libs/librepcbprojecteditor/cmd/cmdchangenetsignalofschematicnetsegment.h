@@ -17,14 +17,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_PROJECT_SES_ADDNETLABEL_H
-#define LIBREPCB_PROJECT_SES_ADDNETLABEL_H
+#ifndef LIBREPCB_PROJECT_CMDCHANGENETSIGNALOFSCHEMATICNETSEGMENT_H
+#define LIBREPCB_PROJECT_CMDCHANGENETSIGNALOFSCHEMATICNETSEGMENT_H
 
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include "ses_base.h"
+#include <librepcbcommon/undocommandgroup.h>
+#include <librepcbcommon/uuid.h>
+#include <librepcbcommon/units/all_length_units.h>
 
 /*****************************************************************************************
  *  Namespace / Forward Declarations
@@ -32,47 +34,44 @@
 namespace librepcb {
 namespace project {
 
-class Schematic;
-class SI_NetLabel;
-class CmdSchematicNetLabelEdit;
+class NetSignal;
+class ComponentSignalInstance;
+class SI_NetSegment;
 
 /*****************************************************************************************
- *  Class SES_AddNetLabel
+ *  Class CmdChangeNetSignalOfSchematicNetSegment
  ****************************************************************************************/
 
 /**
- * @brief The SES_AddNetLabel class
+ * @brief The CmdChangeNetSignalOfSchematicNetSegment class
  */
-class SES_AddNetLabel final : public SES_Base
+class CmdChangeNetSignalOfSchematicNetSegment final : public UndoCommandGroup
 {
-        Q_OBJECT
-
     public:
 
         // Constructors / Destructor
-        explicit SES_AddNetLabel(SchematicEditor& editor, Ui::SchematicEditor& editorUi,
-                                 GraphicsView& editorGraphicsView, UndoStack& undoStack);
-        ~SES_AddNetLabel();
-
-        // General Methods
-        ProcRetVal process(SEE_Base* event) noexcept override;
-        bool entry(SEE_Base* event) noexcept override;
-        bool exit(SEE_Base* event) noexcept override;
+        CmdChangeNetSignalOfSchematicNetSegment() = delete;
+        CmdChangeNetSignalOfSchematicNetSegment(const CmdChangeNetSignalOfSchematicNetSegment& other) = delete;
+        CmdChangeNetSignalOfSchematicNetSegment(SI_NetSegment& seg, NetSignal& newSig) noexcept;
+        ~CmdChangeNetSignalOfSchematicNetSegment() noexcept;
 
 
     private:
 
         // Private Methods
-        ProcRetVal processSceneEvent(SEE_Base* event) noexcept;
-        bool addLabel(Schematic& schematic, const Point& pos) noexcept;
-        bool updateLabel(const Point& pos) noexcept;
-        bool fixLabel(const Point& pos) noexcept;
+
+        /// @copydoc UndoCommand::performExecute()
+        bool performExecute() throw (Exception) override;
+
+        void changeNetSignalOfNetSegment() throw (Exception);
+        void updateCompSigInstNetSignal(ComponentSignalInstance& cmpSig) throw (Exception);
 
 
-        // General Attributes
-        bool mUndoCmdActive;
-        SI_NetLabel* mCurrentNetLabel;
-        CmdSchematicNetLabelEdit* mEditCmd;
+        // Private Member Variables
+
+        // Attributes from the constructor
+        SI_NetSegment& mNetSegment;
+        NetSignal& mNewNetSignal;
 };
 
 /*****************************************************************************************
@@ -82,4 +81,4 @@ class SES_AddNetLabel final : public SES_Base
 } // namespace project
 } // namespace librepcb
 
-#endif // LIBREPCB_PROJECT_SES_ADDNETLABEL_H
+#endif // LIBREPCB_PROJECT_CMDCHANGENETSIGNALOFSCHEMATICNETSEGMENT_H

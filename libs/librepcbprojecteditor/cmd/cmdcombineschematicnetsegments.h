@@ -17,15 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBREPCB_PROJECT_CMDCOMBINEALLNETSIGNALSUNDERSCHEMATICNETPOINT_H
-#define LIBREPCB_PROJECT_CMDCOMBINEALLNETSIGNALSUNDERSCHEMATICNETPOINT_H
+#ifndef LIBREPCB_PROJECT_CMDCOMBINESCHEMATICNETSEGMENTS_H
+#define LIBREPCB_PROJECT_CMDCOMBINESCHEMATICNETSEGMENTS_H
 
 /*****************************************************************************************
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include <librepcbcommon/undocommandgroup.h>
 #include <librepcbcommon/units/point.h>
+#include <librepcbcommon/undocommandgroup.h>
 
 /*****************************************************************************************
  *  Namespace / Forward Declarations
@@ -33,27 +33,31 @@
 namespace librepcb {
 namespace project {
 
-class Circuit;
-class Schematic;
+class SI_NetSegment;
 class SI_NetPoint;
+class SI_NetLine;
 
 /*****************************************************************************************
- *  Class CmdCombineAllNetSignalsUnderSchematicNetPoint
+ *  Class CmdCombineSchematicNetSegments
  ****************************************************************************************/
 
 /**
- * @brief The CmdCombineAllNetSignalsUnderSchematicNetPoint class
+ * @brief This undo command combines two schematic netsegments together
+ *
+ * @note Both netsegments must have the same netsignal!
  */
-class CmdCombineAllNetSignalsUnderSchematicNetPoint final : public UndoCommandGroup
+class CmdCombineSchematicNetSegments final : public UndoCommandGroup
 {
     public:
 
         // Constructors / Destructor
-        CmdCombineAllNetSignalsUnderSchematicNetPoint(SI_NetPoint& netpoint) noexcept;
-        ~CmdCombineAllNetSignalsUnderSchematicNetPoint() noexcept;
+        CmdCombineSchematicNetSegments() = delete;
+        CmdCombineSchematicNetSegments(const CmdCombineSchematicNetSegments& other) = delete;
+        CmdCombineSchematicNetSegments(SI_NetSegment& toBeRemoved, SI_NetPoint& junction) noexcept;
+        ~CmdCombineSchematicNetSegments() noexcept;
 
-        // Getters
-        bool hasCombinedSomeItems() const noexcept {return mHasCombinedSomeItems;}
+        // Operator Overloadings
+        CmdCombineSchematicNetSegments& operator=(const CmdCombineSchematicNetSegments& rhs) = delete;
 
 
     private:
@@ -63,14 +67,12 @@ class CmdCombineAllNetSignalsUnderSchematicNetPoint final : public UndoCommandGr
         /// @copydoc UndoCommand::performExecute()
         bool performExecute() throw (Exception) override;
 
+        SI_NetPoint& addNetPointInMiddleOfNetLine(SI_NetLine& l, const Point& pos) throw (Exception);
+
 
         // Attributes from the constructor
-        Circuit& mCircuit;
-        Schematic& mSchematic;
-        SI_NetPoint& mNetPoint;
-
-        // Private Member Variables
-        bool mHasCombinedSomeItems;
+        SI_NetSegment& mNetSegmentToBeRemoved;
+        SI_NetPoint& mJunctionNetPoint;
 };
 
 /*****************************************************************************************
@@ -80,4 +82,4 @@ class CmdCombineAllNetSignalsUnderSchematicNetPoint final : public UndoCommandGr
 } // namespace project
 } // namespace librepcb
 
-#endif // LIBREPCB_PROJECT_CMDCOMBINEALLNETSIGNALSUNDERSCHEMATICNETPOINT_H
+#endif // LIBREPCB_PROJECT_CMDCOMBINESCHEMATICNETSEGMENTS_H

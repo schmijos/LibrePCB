@@ -39,7 +39,9 @@ class SI_NetPoint;
  ****************************************************************************************/
 
 /**
- * @brief The CmdCombineSchematicNetPoints class
+ * @brief This undo command combines two schematic netpoints together
+ *
+ * @note Both netpoints must have the same netsegment!
  */
 class CmdCombineSchematicNetPoints final : public UndoCommandGroup
 {
