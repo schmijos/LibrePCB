@@ -460,6 +460,10 @@ class FilePath final
 // Non-Member Functions
 QDataStream& operator<<(QDataStream& stream, const FilePath& filepath);
 QDebug& operator<<(QDebug& stream, const FilePath& filepath);
+inline uint qHash(const FilePath& key, uint seed)
+{
+    return qHash(key.toStr(), seed);
+}
 
 /*****************************************************************************************
  *  End of File

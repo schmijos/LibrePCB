@@ -27,6 +27,7 @@
 #include <librepcbcommon/fileio/smartxmlfile.h>
 #include <librepcbcommon/fileio/xmldomdocument.h>
 #include <librepcbcommon/fileio/xmldomelement.h>
+#include <librepcblibrary/library.h>
 #include <librepcblibrary/cat/componentcategory.h>
 #include <librepcblibrary/cat/packagecategory.h>
 #include <librepcblibrary/sym/symbol.h>
@@ -79,8 +80,22 @@ WorkspaceLibrary::~WorkspaceLibrary() noexcept
 }
 
 /*****************************************************************************************
+ *  Getters: All Library Elements
+ ****************************************************************************************/
+
+QHash<FilePath, Uuid> WorkspaceLibrary::getAllLibraries() const throw (Exception)
+{
+    return getAllElementsOfTable("libraries");
+}
+
+/*****************************************************************************************
  *  Getters: Library Elements by their UUID
  ****************************************************************************************/
+
+QMultiMap<Version, FilePath> WorkspaceLibrary::getLibraries(const Uuid& uuid) const throw (Exception)
+{
+    return getElementFilePathsFromDb("libraries", uuid);
+}
 
 QMultiMap<Version, FilePath> WorkspaceLibrary::getComponentCategories(const Uuid& uuid) const throw (Exception)
 {
@@ -248,6 +263,7 @@ int WorkspaceLibrary::rescan() throw (Exception)
 
     int count = 0;
     QMultiMap<QString, FilePath> dirs = getAllElementDirectories();
+    count += addLibrariesToDb(                      dirs.values("lplib"));
     count += addCategoriesToDb<ComponentCategory>(  dirs.values("cmpcat"),  "component_categories", "cat_id");
     count += addCategoriesToDb<PackageCategory>(    dirs.values("pkgcat"),  "package_categories",   "cat_id");
     count += addElementsToDb<Symbol>(               dirs.values("sym"),     "symbols",              "symbol_id");
@@ -262,6 +278,38 @@ int WorkspaceLibrary::rescan() throw (Exception)
 /*****************************************************************************************
  *  Private Methods
  ****************************************************************************************/
+
+int WorkspaceLibrary::addLibrariesToDb(const QList<FilePath>& dirs) throw (Exception)
+{
+    int count = 0;
+    foreach (const FilePath& filepath, dirs) {
+        Library library(filepath, true);
+
+        QSqlQuery query = prepareQuery(
+            "INSERT INTO libraries "
+            "(filepath, uuid, version) VALUES "
+            "(:filepath, :uuid, :version)");
+        query.bindValue(":filepath",    filepath.toRelative(mWorkspace.getLibraryPath()));
+        query.bindValue(":uuid",        library.getUuid().toStr());
+        query.bindValue(":version",     library.getVersion().toStr());
+        int id = execQuery(query, true);
+
+        foreach (const QString& locale, library.getAllAvailableLocales()) {
+            QSqlQuery query = prepareQuery(
+                "INSERT INTO libraries_tr "
+                "(lib_id, locale, name, description, keywords) VALUES "
+                "(:element_id, :locale, :name, :description, :keywords)");
+            query.bindValue(":element_id",  id);
+            query.bindValue(":locale",      locale);
+            query.bindValue(":name",        library.getNames().value(locale));
+            query.bindValue(":description", library.getDescriptions().value(locale));
+            query.bindValue(":keywords",    library.getKeywords().value(locale));
+            execQuery(query, false);
+        }
+        count++;
+    }
+    return count;
+}
 
 template <typename ElementType>
 int WorkspaceLibrary::addCategoriesToDb(const QList<FilePath>& dirs, const QString& tablename,
@@ -399,8 +447,29 @@ int WorkspaceLibrary::addDevicesToDb(const QList<FilePath>& dirs, const QString&
     return count;
 }
 
-QMultiMap<Version, FilePath> WorkspaceLibrary::getElementFilePathsFromDb(const QString& tablename,
-                                                                const Uuid& uuid) const throw (Exception)
+QHash<FilePath, Uuid> WorkspaceLibrary::getAllElementsOfTable(const QString& tablename) const throw (Exception)
+{
+    QSqlQuery query = prepareQuery("SELECT filepath, uuid FROM " % tablename);
+    execQuery(query, false);
+
+    QHash<FilePath, Uuid> elements;
+    while (query.next()) {
+        QString filepathStr = query.value(0).toString();
+        QString uuidStr = query.value(1).toString();
+        FilePath filepath(FilePath::fromRelative(mWorkspace.getLibraryPath(), filepathStr));
+        Uuid uuid(uuidStr);
+        if (filepath.isValid() && (!uuid.isNull())) {
+            elements.insert(filepath, uuid);
+        } else {
+            qWarning() << "Invalid element in library:" << tablename << "::"
+                       << filepathStr << "::" << uuidStr;
+        }
+    }
+    return elements;
+}
+
+QMultiMap<Version, FilePath> WorkspaceLibrary::getElementFilePathsFromDb(
+        const QString& tablename, const Uuid& uuid) const throw (Exception)
 {
     QSqlQuery query = prepareQuery(
         "SELECT version, filepath FROM " % tablename % " "
@@ -415,12 +484,9 @@ QMultiMap<Version, FilePath> WorkspaceLibrary::getElementFilePathsFromDb(const Q
         QString filepathStr = query.value(1).toString();
         Version version(versionStr);
         FilePath filepath(FilePath::fromRelative(mWorkspace.getLibraryPath(), filepathStr));
-        if (version.isValid() && filepath.isValid())
-        {
+        if (version.isValid() && filepath.isValid()) {
             elements.insert(version, filepath);
-        }
-        else
-        {
+        } else {
             qWarning() << "Invalid element in library:" << tablename << "::"
                        << filepathStr << "::" << versionStr;
         }
@@ -493,20 +559,21 @@ void WorkspaceLibrary::createAllTables() throw (Exception)
                         "`value_blob` BLOB "
                         ")");
 
-    // repositories
-    queries << QString( "CREATE TABLE IF NOT EXISTS repositories ("
+    // libraries
+    queries << QString( "CREATE TABLE IF NOT EXISTS libraries ("
                         "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
                         "`filepath` TEXT UNIQUE NOT NULL, "
-                        "`uuid` TEXT NOT NULL "
+                        "`uuid` TEXT NOT NULL, "
+                        "`version` TEXT NOT NULL "
                         ")");
-    queries << QString( "CREATE TABLE IF NOT EXISTS repositories_tr ("
+    queries << QString( "CREATE TABLE IF NOT EXISTS libraries_tr ("
                         "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
-                        "`repo_id` INTEGER REFERENCES repositories(id) NOT NULL, "
+                        "`lib_id` INTEGER REFERENCES libraries(id) NOT NULL, "
                         "`locale` TEXT NOT NULL, "
                         "`name` TEXT, "
                         "`description` TEXT, "
                         "`keywords` TEXT, "
-                        "UNIQUE(repo_id, locale)"
+                        "UNIQUE(lib_id, locale)"
                         ")");
 
     // component categories
@@ -676,9 +743,9 @@ void WorkspaceLibrary::clearAllTables() throw (Exception)
     // internal
     queries << QString( "DELETE FROM internal");
 
-    // repositories
-    queries << QString( "DELETE FROM repositories_tr");
-    queries << QString( "DELETE FROM repositories");
+    // libraries
+    queries << QString( "DELETE FROM libraries_tr");
+    queries << QString( "DELETE FROM libraries");
 
     // component categories
     queries << QString( "DELETE FROM component_categories_tr");
@@ -724,7 +791,7 @@ QMultiMap<QString, FilePath> WorkspaceLibrary::getAllElementDirectories() throw 
 {
     QMultiMap<QString, FilePath> map;
     QStringList filter = QStringList() << "*.dev" << "*.cmpcat" << "*.cmp"
-                                       << "*.pkg" << "*.pkgcat" << "*.sym";
+                                       << "*.pkg" << "*.pkgcat" << "*.sym" << "*.lplib";
     QDirIterator it(mWorkspace.getLibraryPath().toStr(), filter, QDir::Dirs,
                     QDirIterator::Subdirectories);
     while (it.hasNext()) {

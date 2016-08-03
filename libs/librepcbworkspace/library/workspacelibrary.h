@@ -79,7 +79,11 @@ class WorkspaceLibrary final : public QObject
         ~WorkspaceLibrary() noexcept;
 
 
+        // Getters: All Library Elements
+        QHash<FilePath, Uuid> getAllLibraries() const throw (Exception);
+
         // Getters: Library Elements by their UUID
+        QMultiMap<Version, FilePath> getLibraries(const Uuid& uuid) const throw (Exception);
         QMultiMap<Version, FilePath> getComponentCategories(const Uuid& uuid) const throw (Exception);
         QMultiMap<Version, FilePath> getPackageCategories(const Uuid& uuid) const throw (Exception);
         QMultiMap<Version, FilePath> getSymbols(const Uuid& uuid) const throw (Exception);
@@ -122,6 +126,7 @@ class WorkspaceLibrary final : public QObject
     private:
 
         // Private Methods
+        int addLibrariesToDb(const QList<FilePath>& dirs) throw (Exception);
         template <typename ElementType>
         int addCategoriesToDb(const QList<FilePath>& dirs, const QString& tablename,
                               const QString& id_rowname) throw (Exception);
@@ -130,6 +135,7 @@ class WorkspaceLibrary final : public QObject
                             const QString& id_rowname) throw (Exception);
         int addDevicesToDb(const QList<FilePath>& dirs, const QString& tablename,
                            const QString& id_rowname) throw (Exception);
+        QHash<FilePath, Uuid> getAllElementsOfTable(const QString& tablename) const throw (Exception);
         QMultiMap<Version, FilePath> getElementFilePathsFromDb(const QString& tablename,
                                                                const Uuid& uuid) const throw (Exception);
         FilePath getLatestVersionFilePath(const QMultiMap<Version, FilePath>& list) const noexcept;
