@@ -38,7 +38,11 @@ SOURCES += \
     settings/items/wsi_appearance.cpp \
     library/workspacelibrary.cpp \
     library/cat/categorytreemodel.cpp \
-    library/cat/categorytreeitem.cpp
+    library/cat/categorytreeitem.cpp \
+    library/manager/librarylistwidgetitem.cpp \
+    library/manager/libraryinfowidget.cpp \
+    library/manager/addlibrarywidget.cpp \
+    library/manager/librarymanager.cpp
 
 HEADERS += \
     workspace.h \
@@ -58,8 +62,16 @@ HEADERS += \
     settings/items/wsi_appearance.h \
     library/workspacelibrary.h \
     library/cat/categorytreemodel.h \
-    library/cat/categorytreeitem.h
+    library/cat/categorytreeitem.h \
+    library/manager/librarylistwidgetitem.h \
+    library/manager/libraryinfowidget.h \
+    library/manager/addlibrarywidget.h \
+    library/manager/librarymanager.h
 
 FORMS += \
     workspacechooserdialog.ui \
-    settings/workspacesettingsdialog.ui
+    settings/workspacesettingsdialog.ui \
+    library/manager/librarylistwidgetitem.ui \
+    library/manager/libraryinfowidget.ui \
+    library/manager/addlibrarywidget.ui \
+    library/manager/librarymanager.ui
