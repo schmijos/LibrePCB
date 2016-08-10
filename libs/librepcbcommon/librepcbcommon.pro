@@ -74,7 +74,8 @@ HEADERS += \
     cam/gerberaperturelist.h \
     cam/excellongenerator.h \
     fileio/smartversionfile.h \
-    fileio/fileutils.h
+    fileio/fileutils.h \
+    repository.h
 
 SOURCES += \
     attributes/attributetype.cpp \
@@ -124,7 +125,8 @@ SOURCES += \
     cam/gerberaperturelist.cpp \
     cam/excellongenerator.cpp \
     fileio/smartversionfile.cpp \
-    fileio/fileutils.cpp
+    fileio/fileutils.cpp \
+    repository.cpp
 
 FORMS += \
     dialogs/gridsettingsdialog.ui \
