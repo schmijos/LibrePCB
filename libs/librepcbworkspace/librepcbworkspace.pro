@@ -38,7 +38,8 @@ SOURCES += \
     settings/items/wsi_appearance.cpp \
     library/workspacelibrary.cpp \
     library/cat/categorytreemodel.cpp \
-    library/cat/categorytreeitem.cpp
+    library/cat/categorytreeitem.cpp \
+    settings/items/wsi_repositories.cpp
 
 HEADERS += \
     workspace.h \
@@ -58,7 +59,8 @@ HEADERS += \
     settings/items/wsi_appearance.h \
     library/workspacelibrary.h \
     library/cat/categorytreemodel.h \
-    library/cat/categorytreeitem.h
+    library/cat/categorytreeitem.h \
+    settings/items/wsi_repositories.h
 
 FORMS += \
     workspacechooserdialog.ui \
