@@ -7,15 +7,15 @@ cache: ccache
 matrix:
   include:
     # Ubuntu 14.04 + GCC 4.8 + Qt 5.2 + Doxygen Generation (all packages from official Ubuntu repositories)
-    - os: linux
-      dist: trusty
-      compiler: gcc
-      env: BUILD_DOXYGEN=true QT_BASE="trusty"
+#    - os: linux
+#      dist: trusty
+#      compiler: gcc
+#      env: BUILD_DOXYGEN=true QT_BASE="trusty"
     # Ubuntu 14.04 + Clang + Latest Qt from beineri PPA (https://launchpad.net/~beineri)
-    - os: linux
-      dist: trusty
-      compiler: clang
-      env: BUILD_DOXYGEN=false QT_BASE="qt57" QT_PPA="ppa:beineri/opt-qt57-trusty"
+#    - os: linux
+#      dist: trusty
+#      compiler: clang
+#      env: BUILD_DOXYGEN=false QT_BASE="qt57" QT_PPA="ppa:beineri/opt-qt57-trusty"
     # OS X + GCC
     - os: osx
       compiler: gcc
@@ -54,6 +54,15 @@ install:
 script:
   - mkdir build && cd build && qmake ../librepcb.pro -r "QMAKE_CXX=$CXX" "QMAKE_CC=$CC" && make -j8 && cd ../   # build librepcb
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then xvfb-run -a ./build/generated/unix/tests; fi                     # run all unit tests (linux, using xvfb)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
   - if [ "${TRAVIS_OS_NAME}" = "osx" ];   then ./build/generated/mac/tests; fi                                  # run all unit tests (mac)
 
 # run doxygen and upload the html output to github (gh-pages of LibrePCB-Doxygen)
