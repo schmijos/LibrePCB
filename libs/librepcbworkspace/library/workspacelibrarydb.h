@@ -24,7 +24,6 @@
  *  Includes
  ****************************************************************************************/
 #include <QtCore>
-#include <QtSql>
 #include <librepcbcommon/uuid.h>
 #include <librepcbcommon/exceptions.h>
 #include <librepcbcommon/fileio/filepath.h>
@@ -35,6 +34,7 @@
 namespace librepcb {
 
 class Version;
+class SQLiteDatabase;
 
 namespace workspace {
 
@@ -46,15 +46,6 @@ class Workspace;
 
 /**
  * @brief The WorkspaceLibraryDb class
- *
- * @todo This class needs some refactoring:
- *          - rescan() is very slow
- *          - rescan() does not report its progress
- *          - rescan() blocks the whole application
- *          - rescan() does not really have exception handling
- *          - rescan() searches all XML files instead of element directories
- *              --> error if there are multiple XML files in one element directory
- *          - many other issues...
  */
 class WorkspaceLibraryDb final : public QObject
 {
@@ -67,17 +58,15 @@ class WorkspaceLibraryDb final : public QObject
         WorkspaceLibraryDb(const WorkspaceLibraryDb& other) = delete;
 
         /**
-        * @brief Constructor to open the library of an existing workspace
+        * @brief Constructor to open the library database of an existing workspace
         *
-        * @param libDirPath     The filepath to the library directory
-        * @param cacheFilePath  The filepath to the *.sqlite library cache database
+        * @param ws     The workspace object
         *
         * @throw Exception If the library could not be opened, this constructor throws
         *                  an exception.
         */
         explicit WorkspaceLibraryDb(Workspace& ws) throw (Exception);
         ~WorkspaceLibraryDb() noexcept;
-
 
         // Getters: Library Elements by their UUID
         QMultiMap<Version, FilePath> getComponentCategories(const Uuid& uuid) const throw (Exception);
@@ -96,9 +85,11 @@ class WorkspaceLibraryDb final : public QObject
         FilePath getLatestDevice(const Uuid& uuid) const throw (Exception);
 
         // Getters: Element Metadata
-        void getDeviceMetadata(const FilePath& devDir, Uuid* pkgUuid = nullptr,
-                               QString* nameEn = nullptr) const throw (Exception);
-        void getPackageMetadata(const FilePath& pkgDir, QString* nameEn = nullptr) const throw (Exception);
+        template <typename ElementType>
+        void getElementTranslations(const FilePath& elemDir, const QStringList& localeOrder,
+                                    QString* name = nullptr, QString* desc = nullptr,
+                                    QString* keywords = nullptr) const throw (Exception);
+        void getDeviceMetadata(const FilePath& devDir, Uuid* pkgUuid = nullptr) const throw (Exception);
 
         // Getters: Special
         QSet<Uuid> getComponentCategoryChilds(const Uuid& parent) const throw (Exception);
@@ -110,6 +101,10 @@ class WorkspaceLibraryDb final : public QObject
 
         /**
          * @brief Rescan the whole library directory and update the SQLite database
+         *
+         * @todo Report errors (for example by returning a QStringList).
+         * @todo Move the work into a separate thread instead of blocking the main thread?
+         * @todo Add the ability to report its progress?
          */
         int rescan() throw (Exception);
 
@@ -120,6 +115,9 @@ class WorkspaceLibraryDb final : public QObject
     private:
 
         // Private Methods
+        void getElementTranslations(const QString& table, const QString& idRow,
+                                    const FilePath& elemDir, const QStringList& localeOrder,
+                                    QString* name, QString* desc, QString* keywords) const throw (Exception);
         template <typename ElementType>
         int addCategoriesToDb(const QList<FilePath>& dirs, const QString& tablename,
                               const QString& id_rowname) throw (Exception);
@@ -133,18 +131,14 @@ class WorkspaceLibraryDb final : public QObject
         FilePath getLatestVersionFilePath(const QMultiMap<Version, FilePath>& list) const noexcept;
         QSet<Uuid> getCategoryChilds(const QString& tablename, const Uuid& categoryUuid) const throw (Exception);
         QSet<Uuid> getElementsByCategory(const QString& tablename, const QString& idrowname,
-                                          const Uuid& categoryUuid) const throw (Exception);
+                                         const Uuid& categoryUuid) const throw (Exception);
         void createAllTables() throw (Exception);
         void clearAllTables() throw (Exception);
-        QMultiMap<QString, FilePath> getAllElementDirectories() throw (Exception);
-        QSqlQuery prepareQuery(const QString& query) const throw (Exception);
-        int execQuery(QSqlQuery& query, bool checkId) const throw (Exception);
 
 
         // Attributes
         Workspace& mWorkspace;
-        FilePath mLibDbFilePath; ///< a #FilePath object which represents the library_cache.sqlite file
-        QSqlDatabase mLibDatabase; ///< the SQLite database of the file #mLibFilePath
+        QScopedPointer<SQLiteDatabase> mDb; ///< the SQLite database "library_cache.sqlite"
 };
 
 /*****************************************************************************************
