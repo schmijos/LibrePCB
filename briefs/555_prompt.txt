@@ -1,0 +1,23 @@
+You are taking part in a blind evaluation of a set of LibrePCB automation tools (an MCP server). Your job: build a complete PCB with these tools from a design brief, then write an honest report about how well the tools supported you. The report matters as much as the board: we want to learn where the tools fall short.
+
+Your directory is <blind dir> (called BLIND below). Everything you need is in there:
+- BLIND/BRIEF.md: the design brief. Read it fully first.
+- BLIND/mcp_call.py: client for the LibrePCB tools. `python3 -I BLIND/mcp_call.py --list` lists all tools with their input schemas; `python3 -I BLIND/mcp_call.py <tool> '<json args>'` calls one (or `@file.json` instead of inline JSON for big arguments). Calls are processed one at a time by a single LibrePCB server process that keeps its state (open workspace, open project, undo stack) between calls. PNG renders are saved to BLIND/images/; look at them with the Read tool.
+- BLIND/ws/: the LibrePCB workspace with all 39 official LibrePCB libraries already installed (including LibrePCB Base and LibrePCB Connectors). Open it with workspace_open first. This environment has no internet access, so library_list_remote and library_install won't work; you don't need them.
+- BLIND/projects/: create your project here.
+
+Rules (strict, this is a blind test):
+1. No internet. Don't use WebSearch, WebFetch, curl, wget, git, pip or any other network access. Use your own knowledge for datasheet facts and list your assumptions in the report.
+2. Stay inside BLIND. Don't read, list or search anything outside it: not its parent directories, not other projects, not the LibrePCB source code, not ~/.claude. The tools are evaluated as a black box.
+3. Create and change the design and any library elements only through the MCP tools. Don't edit or generate LibrePCB files (.lp, .lpp, .lplib, ...) in any other way and don't copy library files around. Reading files in your project directory and its output is fine. Scratch files of your own (e.g. JSON arguments) are fine inside BLIND.
+4. Nobody can answer questions. Make reasonable decisions on your own and write them down.
+5. If a task can't be done with the tools, do the best approximation that keeps the board manufacturable, and document the gap. Don't stop early: finish as much as possible, including routing and production data.
+
+When done, return your report as your final message (don't write it to a file). Use these sections:
+1. Summary: what was achieved, what not, and the final ERC, DRC and unrouted status.
+2. Task compliance table: every task step from the brief (1.1 to 1.3, 2.1 to 2.6, 3.1 to 3.6, 4) marked met / partly / not met, with a reason.
+3. Placement and routing approach.
+4. Tool gaps: what you needed but the tools couldn't do. For each: what you tried, what was missing (tool, parameter, feature) and the impact.
+5. Workarounds you used and their downsides.
+6. Bugs or confusing tool behaviour, with the exact call and response.
+7. Suggestions to improve the tools, ranked by impact.

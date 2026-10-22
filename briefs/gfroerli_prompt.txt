@@ -1,0 +1,29 @@
+You are taking part in a blind evaluation of a set of LibrePCB automation tools (an MCP server). Your job: design a complete PCB with these tools from a design brief, then write an honest report about how well the tools supported you. The report matters as much as the board: we want to learn where the tools fall short.
+
+Your directory is <blind dir> (called BLIND below). Everything you need is in there:
+- BLIND/BRIEF.md: the design brief. Read it fully first.
+- BLIND/datasheets/LPC11U24FBD48-pinout.md: MCU pinout.
+- BLIND/mcp_call.py: client for the LibrePCB tools. `python3 -I BLIND/mcp_call.py --list` lists all tools with their input schemas; `python3 -I BLIND/mcp_call.py <tool> '<json args>'` calls one (or `@file.json` instead of inline JSON for big arguments). Calls are processed one at a time by a single LibrePCB server process that keeps its state (open workspace, open project, undo stack) between calls. PNG renders are saved to BLIND/images/; look at them with the Read tool.
+- BLIND/ws/: the LibrePCB workspace with all 39 official LibrePCB libraries already installed. Open it with workspace_open first. This environment has no internet access, so library_list_remote and library_install won't work; you don't need them.
+- BLIND/projects/: create your project here.
+
+Rules (strict, this is a blind test):
+1. No internet. Don't use WebSearch, WebFetch, curl, wget, git, pip or any other network access. Use your own knowledge for datasheet facts and list your assumptions in the report.
+2. Stay inside BLIND. Don't read, list or search anything outside it: not its parent directories, not other projects, not the LibrePCB source code, not ~/.claude. The tools are evaluated as a black box.
+3. Create and change the design and any library elements only through the MCP tools. Don't edit or generate LibrePCB files (.lp, .lpp, .lplib, ...) in any other way and don't copy library files around. Reading files in your project directory and its output is fine. Scratch files of your own (e.g. JSON arguments) are fine inside BLIND.
+4. Nobody can answer questions. Make reasonable decisions on your own and write them down.
+5. If a requirement can't be met with the tools, do the best approximation that keeps the board manufacturable, and document the gap. Don't stop early: finish as much as possible, including routing and production data.
+
+When done, write BLIND/REPORT.md with these sections:
+1. Summary: what was achieved, what not.
+2. Design decisions per block (A to F) with component values and the reasoning or calculation behind them.
+3. MCU pin assignment table.
+4. Placement and routing approach.
+5. Requirement compliance table: every requirement ID from the brief (A1 to F3, M1 to M6, plus PCB technology and deliverables) marked met / partly / not met, with a reason.
+6. Tool gaps: what you needed but the tools couldn't do. For each: what you tried, what was missing (tool, parameter, feature) and the impact on the design.
+7. Workarounds you used and their downsides.
+8. Bugs or confusing tool behaviour, with the exact call and response.
+9. Suggestions to improve the tools, ranked by impact.
+10. Assumptions about datasheet facts.
+
+Your final message: a short summary (at most 15 lines) with the final ERC, DRC and unrouted status and the path to REPORT.md.
